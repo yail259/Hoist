@@ -1,0 +1,18 @@
+-- Hoist: Classify questions by category using an LLM
+-- Demonstrates: list literal, map with ask, filter, counting
+
+let questions = [
+    "What is the capital of France?",
+    "How tall is Mount Everest?",
+    "Who wrote Hamlet?",
+    "What does DNA stand for?",
+    "Where is the Great Wall of China?"
+]
+
+let categories = map questions with
+    ask "Classify this question into exactly one word (geography, science, history, or literature). Reply with only that single word.\n\nQuestion: {it}\n\nCategory:"
+
+let results = map (zip(questions, categories)) with
+    (first(it) or "") ++ " -> " ++ (last(it) or "")
+
+return join results with "\n"

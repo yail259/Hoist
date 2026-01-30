@@ -1,0 +1,7 @@
+-- Hoist: Summarize a document using a single LLM call
+-- Requires: context variable set by host, ask handler (Ollama)
+
+let paragraphs = split context by "\n\n"
+let nonempty = filter paragraphs where length(trim(it)) > 10
+let text = join nonempty with "\n\n"
+return ask "Summarize the following text in 2-3 sentences:\n\n{text}"

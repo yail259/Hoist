@@ -1,0 +1,11 @@
+[package]
+name = "hoist-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core library for the Hoist DSL — a safe language for LLM orchestration"
+
+[dependencies]
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"

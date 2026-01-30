@@ -1,0 +1,37 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Astro
+.astro/
+
+# Python
+/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+.pytest_cache/
+*.so
+
+# WASM build outputs
+/hoist-wasm/pkg/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# napi-rs build outputs
+*.node

@@ -1,0 +1,28 @@
+The Rise of Domain-Specific Languages for AI Orchestration
+
+As large language models become integral to software systems, developers face a growing
+challenge: how to orchestrate LLM calls safely and predictably. General-purpose languages
+like Python offer flexibility but provide no guardrails against runaway token usage,
+unbounded loops, or uncontrolled side effects. This gap has sparked interest in
+domain-specific languages (DSLs) purpose-built for LLM orchestration.
+
+Unlike traditional programming languages, an LLM orchestration DSL can enforce resource
+limits at the language level. For example, a DSL might cap the number of LLM calls a
+program can make, limit string sizes to prevent prompt injection via oversized inputs, or
+restrict collection sizes to keep memory usage predictable. These constraints are not
+afterthoughts bolted onto a runtime — they are fundamental to the language design.
+
+Functional programming concepts map naturally to LLM workflows. A pipeline that splits a
+document into chunks, summarizes each chunk with an LLM call, and then synthesizes the
+summaries into a final output is essentially a map-reduce operation. By embracing
+immutability and pure functions, a DSL can make such pipelines easy to reason about,
+test, and debug. The absence of mutable state eliminates entire categories of bugs that
+plague imperative LLM orchestration code.
+
+The embedding model — where the DSL runs inside a host language like Python or
+JavaScript — offers practical advantages. The host language handles IO, database access,
+and user interaction, while the DSL handles the LLM orchestration logic. This separation
+of concerns keeps the orchestration layer auditable and sandboxed, while still allowing
+integration with existing software ecosystems. A well-designed embedding API lets the
+host provide an "ask handler" callback that routes LLM calls to any backend: OpenAI,
+Anthropic, a local Ollama instance, or even a mock for testing.

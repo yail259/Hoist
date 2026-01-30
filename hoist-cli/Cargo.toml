@@ -1,0 +1,12 @@
+[package]
+name = "hoist-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool for the Hoist DSL"
+
+[[bin]]
+name = "hoist"
+path = "src/main.rs"
+
+[dependencies]
+hoist-core = { path = "../hoist-core" }

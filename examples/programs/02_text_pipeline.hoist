@@ -1,0 +1,9 @@
+-- Hoist: String processing pipeline
+-- Demonstrates: pipeline operator |>, lines, filter, map, replace, join
+
+let log = "ERROR: disk full\nINFO: backup started\nERROR: network timeout\nINFO: backup complete\nWARN: low memory\nERROR: auth failed"
+let errors = log
+    |> lines
+    |> filter where starts_with(it, "ERROR")
+    |> map with replace(it, "ERROR: ", "")
+return "Found " ++ show(length(errors)) ++ " errors: " ++ join errors with ", "

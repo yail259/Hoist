@@ -1,0 +1,8 @@
+-- Hoist: Multi-step document analysis (RLM pattern)
+-- Splits context into chunks, summarizes each with LLM, then synthesizes
+
+let chunks = split context by "\n\n"
+let nonempty = filter chunks where length(trim(it)) > 10
+let summaries = map nonempty with ask "Summarize this passage in one sentence:\n\n{it}"
+let combined = join summaries with "\n- "
+return ask "Based on these section summaries, write a cohesive 2-sentence overall summary:\n\n- {combined}"

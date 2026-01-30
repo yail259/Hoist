@@ -1,0 +1,21 @@
+{
+  "name": "@anthropic/hoist",
+  "version": "0.1.0",
+  "description": "Hoist DSL — a safe language for LLM orchestration",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "hoist",
+    "triples": {
+      "defaults": true
+    }
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  },
+  "license": "MIT"
+}

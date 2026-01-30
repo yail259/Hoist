@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "hoist-core",
+    "hoist-cli",
+    "hoist-python",
+    "hoist-wasm",
+    "hoist-node",
+]
+default-members = [
+    "hoist-core",
+    "hoist-cli",
+]
+resolver = "2"

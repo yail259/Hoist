@@ -1,0 +1,171 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="wllama Test" description="Test SmolLM2-135M with Hoist ask prompts">
+  <main>
+    <h1>wllama Test: SmolLM2-135M for Hoist</h1>
+    <p>Testing if a 135M-param model can handle Hoist's ask handler prompts.</p>
+
+    <div id="status">Initializing...</div>
+    <div id="results"></div>
+  </main>
+</Base>
+
+<script>
+import { Wllama } from '@wllama/wllama';
+
+const status = document.getElementById('status')!;
+const results = document.getElementById('results')!;
+
+function log(label: string, text: string, isError = false) {
+  const div = document.createElement('div');
+  div.className = 'test-result' + (isError ? ' error' : '');
+  div.innerHTML = `<strong>${label}</strong><pre>${text}</pre>`;
+  results.appendChild(div);
+}
+
+// The exact prompts Hoist demos send via ask()
+const TEST_PROMPTS = [
+  {
+    name: "Classification (geography)",
+    prompt: 'Classify as: geography, science, history, or literature. Reply with ONE word only.\n\nQuestion: What is the capital of France?\n',
+    expected: "geography",
+  },
+  {
+    name: "Classification (science)",
+    prompt: 'Classify as: geography, science, history, or literature. Reply with ONE word only.\n\nQuestion: How tall is Mount Everest?\n',
+    expected: "geography or science",
+  },
+  {
+    name: "Classification (literature)",
+    prompt: 'Classify as: geography, science, history, or literature. Reply with ONE word only.\n\nQuestion: Who wrote Hamlet?\n',
+    expected: "literature",
+  },
+  {
+    name: "Sentiment (positive)",
+    prompt: 'Rate the sentiment: positive, negative, or neutral. Reply with ONE word.\n\nReview: This product is amazing! Best purchase ever.\n',
+    expected: "positive",
+  },
+  {
+    name: "Sentiment (negative)",
+    prompt: 'Rate the sentiment: positive, negative, or neutral. Reply with ONE word.\n\nReview: Terrible quality, broke after one day.\n',
+    expected: "negative",
+  },
+  {
+    name: "Summarize (5 words)",
+    prompt: 'Summarize in 5 words or less: AI safety is crucial as systems become more capable.\n',
+    expected: "~5 word summary",
+  },
+  {
+    name: "Structured extraction",
+    prompt: 'List only the people\'s names. Return a JSON array of strings.\n\nThe meeting attendees were Alice from Engineering, Bob from Marketing, and Charlie from Design.\n',
+    expected: '["Alice", "Bob", "Charlie"]',
+  },
+];
+
+async function runTests() {
+  status.textContent = 'Loading wllama...';
+
+  try {
+    const wllama = new Wllama({
+      'single-thread/wllama.wasm': '/wllama/single-thread.wasm',
+      'multi-thread/wllama.wasm': '/wllama/multi-thread.wasm',
+    });
+
+    status.textContent = 'Downloading SmolLM2-135M-Instruct (Q4_K_M, ~105MB)... This is a one-time download.';
+
+    // SmolLM2-135M-Instruct quantized to Q4_K_M (~105MB)
+    await wllama.loadModelFromHF(
+      'bartowski/SmolLM2-135M-Instruct-GGUF',
+      'SmolLM2-135M-Instruct-Q4_K_M.gguf',
+      {
+        progressCallback: ({ loaded, total }: { loaded: number; total: number }) => {
+          const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          status.textContent = `Downloading model... ${pct}%`;
+        },
+      }
+    );
+
+    status.textContent = 'Model loaded! Running tests...';
+
+    for (const test of TEST_PROMPTS) {
+      const start = performance.now();
+      status.textContent = `Running: ${test.name}...`;
+
+      try {
+        // Use chat completion format for instruct model
+        const response = await wllama.createChatCompletion(
+          [{ role: 'user', content: test.prompt }],
+          {
+            nPredict: 64,
+            sampling: {
+              temp: 0.1,
+              top_k: 10,
+              top_p: 0.9,
+            },
+          }
+        );
+        const elapsed = Math.round(performance.now() - start);
+        const text = String(response);
+        log(
+          `${test.name} (${elapsed}ms)`,
+          `Prompt: ${test.prompt.slice(0, 80)}...\nExpected: ${test.expected}\nGot: ${text.trim()}`
+        );
+      } catch (err: unknown) {
+        log(test.name, `ERROR: ${err}`, true);
+      }
+    }
+
+    status.textContent = 'All tests complete!';
+
+    // Cleanup
+    await wllama.exit();
+  } catch (err: unknown) {
+    status.textContent = `Failed: ${err}`;
+    log('Init Error', String(err), true);
+  }
+}
+
+runTests();
+</script>
+
+<style>
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  p { color: var(--text-muted); margin-bottom: 1rem; }
+  #status {
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+  .test-result {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .test-result.error {
+    border-color: #ef4444;
+  }
+  .test-result strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--accent-light);
+  }
+  .test-result pre {
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    color: var(--text-muted);
+    margin: 0;
+  }
+</style>

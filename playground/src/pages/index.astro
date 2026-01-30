@@ -1,0 +1,672 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Hoist — Safe LLM Orchestration">
+  <main>
+    <nav>
+      <a href="/" class="logo">Hoist</a>
+      <div class="nav-links">
+        <a href="/playground">Playground</a>
+        <a href="https://github.com/anthropics/hoist" target="_blank">GitHub</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="badge">Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Reasoning Language Models</a> security research</div>
+      <h1>Stop giving LLMs <span class="danger">unbounded execution</span></h1>
+      <p class="subtitle">
+        Hoist is a functional DSL for LLM orchestration that enforces resource limits,
+        prevents side effects, and makes your AI pipelines auditable. It runs sandboxed
+        inside your Python, Node.js, or browser application.
+      </p>
+      <div class="cta-buttons">
+        <a href="/playground" class="btn btn-primary">Try in Browser</a>
+        <a href="https://github.com/anthropics/hoist" class="btn btn-secondary">View Source</a>
+      </div>
+    </section>
+
+    <section class="problem">
+      <h2>The Problem with LLM Orchestration</h2>
+      <p class="section-intro">
+        Most LLM orchestration happens in Python or TypeScript — languages designed for
+        maximum flexibility, not safety. This creates real vulnerabilities:
+      </p>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon">∞</div>
+          <h3>Unbounded Loops</h3>
+          <p>
+            An LLM deciding "let me try again" can run forever. Your <code>while True</code>
+            loop has no language-level protection against infinite retries or recursive calls.
+          </p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">💸</div>
+          <h3>Token Runaway</h3>
+          <p>
+            A malicious or buggy prompt can concatenate strings indefinitely, generating
+            megabytes of text that burns through your API budget in seconds.
+          </p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">💉</div>
+          <h3>Prompt Injection</h3>
+          <p>
+            Without size limits enforced at the language level, oversized user input can
+            dominate the context window and override your system prompt.
+          </p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">🔓</div>
+          <h3>Side Effects</h3>
+          <p>
+            General-purpose languages let LLM-generated code access the filesystem, network,
+            and environment variables. Good luck auditing that.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="solution">
+      <h2>Hoist: Safety as a Language Feature</h2>
+      <p class="section-intro">
+        Hoist is a pure functional DSL where resource limits aren't bolted on — they're
+        fundamental to the language design. Every program terminates. Every string has a
+        maximum size. Every LLM call is accounted for.
+      </p>
+      <div class="code-comparison">
+        <div class="code-block bad">
+          <div class="code-header">❌ Python — hope for the best</div>
+          <pre><code><span class="kw">def</span> summarize_chunks(text):
+    chunks = text.split(<span class="str">"\n\n"</span>)
+    summaries = []
+    <span class="kw">for</span> chunk <span class="kw">in</span> chunks:  <span class="cmt"># unbounded loop</span>
+        <span class="kw">while True</span>:  <span class="cmt"># retry forever?</span>
+            <span class="kw">try</span>:
+                s = llm.complete(chunk)  <span class="cmt"># no token limit</span>
+                summaries.append(s)
+                <span class="kw">break</span>
+            <span class="kw">except</span>: <span class="kw">pass</span>
+    <span class="kw">return</span> <span class="str">"\n"</span>.join(summaries)  <span class="cmt"># unbounded output</span></code></pre>
+        </div>
+        <div class="code-block good">
+          <div class="code-header">✓ Hoist — enforced limits</div>
+          <pre><code><span class="cmt">-- max 100 LLM calls, 10MB strings, 1M steps</span>
+<span class="kw">let</span> chunks = split context by <span class="str">"\n\n"</span>
+<span class="kw">let</span> nonempty = filter chunks where length(it) > 10
+<span class="kw">let</span> summaries = map nonempty with
+    ask <span class="str">"Summarize: &#123;it&#125;"</span> with retries: 2
+        fallback <span class="str">"(failed)"</span>
+<span class="kw">return</span> join summaries with <span class="str">"\n"</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2>Why Engineers Choose Hoist</h2>
+      <div class="feature-grid">
+        <div class="feature">
+          <h3>🔒 Enforced Resource Limits</h3>
+          <p>
+            <strong>max_ask_calls</strong>, <strong>max_string_size</strong>,
+            <strong>max_collection_size</strong>, and <strong>max_steps</strong> are
+            checked at runtime. Programs that exceed limits fail fast with clear errors —
+            no silent runaway.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>⚡ Pure Functional Core</h3>
+          <p>
+            No mutable state. No side effects. Every expression is deterministic given
+            the same inputs. This makes Hoist programs trivial to test, cache, and replay.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>🎯 Typed LLM Responses</h3>
+          <p>
+            <code>ask "..." as List&lt;String&gt;</code> parses and validates the response.
+            With <code>retries</code> and <code>fallback</code>, malformed LLM output doesn't
+            crash your pipeline.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>🔌 Embedded Anywhere</h3>
+          <p>
+            Native bindings for <strong>Python</strong> (PyO3), <strong>Node.js</strong> (CLI/subprocess),
+            and <strong>WebAssembly</strong> (browser). Your host app provides the LLM backend —
+            OpenAI, Anthropic, Ollama, or a mock for testing.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>🚀 Pipeline Operator</h3>
+          <p>
+            <code>data |> filter where ... |> map with ...</code> chains transformations
+            cleanly. No temporary variables, no nested function calls, no callback hell.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>📋 Auditable by Design</h3>
+          <p>
+            Every <code>ask</code> call goes through your handler. Log prompts, measure
+            latency, enforce rate limits, or swap models — all without changing Hoist code.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Write Hoist Programs</h3>
+          <p>
+            Define your LLM workflow in Hoist's concise syntax. Use <code>ask</code> for
+            LLM calls, <code>map</code>/<code>filter</code>/<code>fold</code> for data
+            transformation.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Provide an Ask Handler</h3>
+          <p>
+            Your host application supplies a callback that handles <code>ask</code> calls.
+            Route to any LLM backend. The handler receives the prompt and optional channel name.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Run Sandboxed</h3>
+          <p>
+            The Hoist interpreter executes your program within configured limits. It cannot
+            access the filesystem, network, or anything outside the sandbox.
+          </p>
+        </div>
+      </div>
+      <div class="code-example">
+        <div class="code-header">Python Integration</div>
+        <pre><code><span class="kw">import</span> hoist
+
+<span class="kw">def</span> <span class="fn">my_ask_handler</span>(prompt, channel):
+    <span class="kw">return</span> openai.complete(prompt)  <span class="cmt"># or anthropic, ollama, etc.</span>
+
+runtime = hoist.HoistRuntime(ask_handler=my_ask_handler)
+runtime.set_limits(max_ask_calls=<span class="num">50</span>, max_string_size=<span class="num">1_000_000</span>)
+runtime.set_context(user_document)
+
+result = runtime.run(<span class="str">"""
+let chunks = split context by "\\n\\n"
+let summaries = map chunks with ask "Summarize: &#123;it&#125;"
+return join summaries with "\\n"
+"""</span>)</code></pre>
+      </div>
+    </section>
+
+    <section class="comparison">
+      <h2>Compared to Alternatives</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Hoist</th>
+              <th>LangChain / LlamaIndex</th>
+              <th>Raw Python</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Resource limits</td>
+              <td class="yes">Language-level enforcement</td>
+              <td class="partial">Manual, easy to bypass</td>
+              <td class="no">None built-in</td>
+            </tr>
+            <tr>
+              <td>Side effects</td>
+              <td class="yes">Impossible by design</td>
+              <td class="no">Full access</td>
+              <td class="no">Full access</td>
+            </tr>
+            <tr>
+              <td>Termination guarantee</td>
+              <td class="yes">Always (step limit)</td>
+              <td class="no">Can loop forever</td>
+              <td class="no">Can loop forever</td>
+            </tr>
+            <tr>
+              <td>Typed LLM responses</td>
+              <td class="yes">Built-in with fallback</td>
+              <td class="partial">Via output parsers</td>
+              <td class="no">Manual parsing</td>
+            </tr>
+            <tr>
+              <td>Auditability</td>
+              <td class="yes">All I/O through handler</td>
+              <td class="partial">Callbacks available</td>
+              <td class="no">Ad-hoc logging</td>
+            </tr>
+            <tr>
+              <td>Learning curve</td>
+              <td class="partial">New DSL syntax</td>
+              <td class="partial">Large API surface</td>
+              <td class="yes">Familiar</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="cta-final">
+      <h2>Try Hoist Now</h2>
+      <p>
+        The playground runs entirely in your browser via WebAssembly. No signup, no API keys,
+        no data leaves your machine.
+      </p>
+      <a href="/playground" class="btn btn-primary btn-large">Open Playground →</a>
+    </section>
+
+    <footer>
+      <p>
+        Hoist is open source under the MIT license.
+        Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Reasoning Language Models</a>
+        research on AI system safety.
+      </p>
+    </footer>
+  </main>
+</Base>
+
+<style>
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .nav-links a {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 4rem 0 3rem;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .badge a {
+    color: var(--accent-light);
+  }
+
+  .hero h1 {
+    font-size: 2.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+  }
+
+  .danger {
+    color: #ef4444;
+  }
+
+  .subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+
+  .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+
+  .btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-light);
+    text-decoration: none;
+  }
+
+  .btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--border);
+    text-decoration: none;
+  }
+
+  /* Sections */
+  section {
+    padding: 4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  section:last-of-type {
+    border-bottom: none;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .section-intro {
+    text-align: center;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* Problem Section */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .problem-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .problem-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .problem-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .problem-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .problem-card code {
+    background: var(--bg-tertiary);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+  }
+
+  /* Code Comparison */
+  .code-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .code-comparison {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .code-block {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .code-block.bad {
+    border: 1px solid #7f1d1d;
+  }
+
+  .code-block.good {
+    border: 1px solid #166534;
+  }
+
+  .code-header {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+  }
+
+  .code-block pre {
+    margin: 0;
+    padding: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .code-block .kw { color: #c678dd; }
+  .code-block .str { color: #98c379; }
+  .code-block .fn { color: #61afef; }
+  .code-block .cmt { color: #5c6370; font-style: italic; }
+  .code-block .num { color: #d19a66; }
+
+  /* Features */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .feature {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .feature h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .feature p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .feature code {
+    background: var(--bg-tertiary);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  .feature strong {
+    color: var(--text);
+  }
+
+  /* How It Works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .step h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .step p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .step code {
+    background: var(--bg-tertiary);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+  }
+
+  .code-example {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .code-example pre {
+    margin: 0;
+    padding: 1.25rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* Comparison Table */
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+  }
+
+  th:first-child {
+    border-top-left-radius: 8px;
+  }
+
+  th:last-child {
+    border-top-right-radius: 8px;
+  }
+
+  td:first-child {
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .yes {
+    color: #4ade80;
+  }
+
+  .partial {
+    color: #facc15;
+  }
+
+  .no {
+    color: #f87171;
+  }
+
+  /* Final CTA */
+  .cta-final {
+    text-align: center;
+    padding: 5rem 0;
+  }
+
+  .cta-final p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 {
+      font-size: 2rem;
+    }
+  }
+</style>

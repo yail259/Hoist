@@ -1,0 +1,7 @@
+-- Hoist: Pure computation (no LLM needed)
+-- Demonstrates: let bindings, list, filter, map, join, pipeline
+
+let fruits = ["apple", "banana", "avocado", "blueberry", "cherry", "apricot"]
+let a_fruits = filter fruits where starts_with(it, "a")
+let shouted = map a_fruits with upper(it)
+return "A-fruits: " ++ join shouted with ", "

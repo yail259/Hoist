@@ -1,0 +1,8 @@
+-- Hoist: Extract structured data using typed ask
+-- Demonstrates: ask ... as List<String>, with retries, fallback
+
+let text = "The meeting attendees were Alice from Engineering, Bob from Marketing, and Charlie from Design. They discussed the Q3 roadmap and budget allocation."
+
+let people = ask "List only the people's names mentioned in this text. Return a JSON array of strings.\n\n{text}" as List<String> with retries: 2 fallback ["unknown"]
+
+return "Found " ++ show(length(people)) ++ " people: " ++ join people with ", "
