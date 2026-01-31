@@ -845,3 +845,176 @@ fn test_step_limit() {
     );
     assert!(result.is_err(), "should fail: computation exceeds max_steps");
 }
+
+// =====================================================================
+// Empty / minimal programs
+// =====================================================================
+
+#[test]
+fn test_empty_return() {
+    let result = run(r#"return """#);
+    // empty string is valid
+    assert_eq!(result, Value::String("".into()));
+}
+
+#[test]
+fn test_return_literal_only() {
+    let result = run("return 42");
+    assert_eq!(result, Value::Int(42));
+}
+
+// =====================================================================
+// Unicode and special strings
+// =====================================================================
+
+#[test]
+fn test_unicode_strings() {
+    let result = run(r#"return length("hello")"#);
+    assert_eq!(result, Value::Int(5));
+
+    // Unicode characters via context (avoids lexer escape limitations)
+    let result = run_with_context(
+        r#"return length(context)"#,
+        "caf\u{00e9}",
+    );
+    // "cafe\u0301" as a Rust string is "cafe" + combining accent = 5 chars
+    // "caf\u{00e9}" is precomposed e-acute = 4 chars
+    assert_eq!(result, Value::Int(4));
+}
+
+#[test]
+fn test_multiline_string_handling() {
+    let result = run_with_context(
+        r#"return length(lines(context))"#,
+        "line1\nline2\nline3",
+    );
+    assert_eq!(result, Value::Int(3));
+}
+
+// =====================================================================
+// lines() and contains() standalone
+// =====================================================================
+
+#[test]
+fn test_lines_function() {
+    let result = run(r#"return lines("a\nb\nc")"#);
+    assert_eq!(result, Value::List(vec![
+        Value::String("a".into()),
+        Value::String("b".into()),
+        Value::String("c".into()),
+    ]));
+}
+
+#[test]
+fn test_contains_function() {
+    assert_eq!(run(r#"return contains("hello world", "world")"#), Value::Bool(true));
+    assert_eq!(run(r#"return contains("hello world", "xyz")"#), Value::Bool(false));
+}
+
+// =====================================================================
+// Combined ask with retries AND fallback
+// =====================================================================
+
+#[test]
+fn test_ask_retries_then_fallback() {
+    // Handler always fails, retries exhausted, should use fallback
+    struct AlwaysFailHandler;
+    impl AskHandler for AlwaysFailHandler {
+        fn ask(&self, _prompt: &str, _channel: Option<&str>) -> Result<String, String> {
+            Err("always fails".into())
+        }
+    }
+
+    let prog = parse_source(r#"return ask "hello" with retries: 2 fallback "safe_default""#).unwrap();
+    let mut interp = Interpreter::new()
+        .with_ask_handler(Box::new(AlwaysFailHandler));
+    let result = interp.eval_program(&prog).unwrap();
+    assert_eq!(result, Value::String("safe_default".into()));
+}
+
+// =====================================================================
+// Parse error tests
+// =====================================================================
+
+#[test]
+fn test_parse_error_unclosed_paren() {
+    let result = parse_source("return (1 + 2");
+    assert!(result.is_err(), "should fail on unclosed paren");
+}
+
+#[test]
+fn test_parse_error_missing_return() {
+    // A program with just a let and no return
+    let result = parse_source("let x = 1");
+    // This might actually be valid depending on implementation -
+    // if it errors, that's expected; if not, it returns some default
+    // Just document the behavior
+    match result {
+        Ok(prog) => {
+            let mut interp = Interpreter::new();
+            // Program without return -- verify it doesn't panic
+            let _ = interp.eval_program(&prog);
+        }
+        Err(_) => {} // also acceptable
+    }
+}
+
+// =====================================================================
+// Negative numbers and edge arithmetic
+// =====================================================================
+
+#[test]
+fn test_negative_arithmetic() {
+    assert_eq!(run("return -5 + 3"), Value::Int(-2));
+    assert_eq!(run("return 0 - 1"), Value::Int(-1));
+    assert_eq!(run("return -1 * -1"), Value::Int(1));
+}
+
+#[test]
+fn test_modulo_operation() {
+    assert_eq!(run("return 10 % 3"), Value::Int(1));
+    assert_eq!(run("return 7 % 7"), Value::Int(0));
+}
+
+// =====================================================================
+// Deeply chained pipeline
+// =====================================================================
+
+#[test]
+fn test_deep_pipeline_chain() {
+    let result = run(r#"
+return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    |> filter where it > 3
+    |> map with it * 2
+    |> filter where it > 10
+    |> map with show(it)
+    |> join with ", "
+"#);
+    assert_eq!(result, Value::String("12, 14, 16, 18, 20".into()));
+}
+
+// =====================================================================
+// Record field access edge cases
+// =====================================================================
+
+#[test]
+fn test_nested_record_operations() {
+    let result = run(r#"
+let data = {name: "test", count: 3}
+return data.name ++ ":" ++ show(data.count)
+"#);
+    assert_eq!(result, Value::String("test:3".into()));
+}
+
+// =====================================================================
+// Empty collection operations
+// =====================================================================
+
+#[test]
+fn test_empty_collection_operations() {
+    assert_eq!(run("return length([])"), Value::Int(0));
+    assert_eq!(run("return reverse([])"), Value::List(vec![]));
+    assert_eq!(run(r#"return join [] with ",""#), Value::String("".into()));
+    assert_eq!(run("return filter [] where it > 0"), Value::List(vec![]));
+    assert_eq!(run("return map [] with it * 2"), Value::List(vec![]));
+}

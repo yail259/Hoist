@@ -179,7 +179,7 @@ return "Emails found: " ++ join emails with ", " ++ "\\nFirst: " ++ first_email`
     code: `-- Split strings and join them back
 let csv = "apple,banana,cherry,date"
 let items = split csv by ","
-let numbered = map (enumerate items) with
+let numbered = map enumerate(items) with
     show((first(it) or 0) + 1) ++ ". " ++ (last(it) or "")
 
 return join numbered with "\\n"`,
@@ -391,7 +391,8 @@ export default function Editor({ initialExample = "hello" }: Props) {
 
   // Load Hoist WASM module on mount
   useEffect(() => {
-    import("../wasm/hoist_wasm.js").then((mod) => {
+    import("../wasm/hoist_wasm.js").then(async (mod) => {
+      await mod.default();
       setHoistModule(mod);
     });
   }, []);
@@ -482,6 +483,18 @@ export default function Editor({ initialExample = "hello" }: Props) {
       setIsError(false);
     }
   }, [selectedExample]);
+
+  // Keyboard shortcut: Cmd/Ctrl+Enter to run
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        runCode();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [hoistModule, selectedExample, llmMode]);
 
   const runCode = async () => {
     if (!viewRef.current || !hoistModule) return;
@@ -599,6 +612,7 @@ export default function Editor({ initialExample = "hello" }: Props) {
         <button onClick={runCode} disabled={isRunning || !hoistModule}>
           {isRunning ? "Running..." : hoistModule ? "Run ▶" : "Loading WASM..."}
         </button>
+        <span class="shortcut-hint">Cmd+Enter</span>
       </div>
       {wllamaStatus && llmMode === "wllama" && (
         <div class="wllama-status">{wllamaStatus}</div>
