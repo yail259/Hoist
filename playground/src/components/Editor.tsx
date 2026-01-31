@@ -195,7 +195,7 @@ let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 let squared = map numbers with it * it
 let even_squares = filter squared where it % 2 == 0
-let total = fold even_squares from 0 with acc + it
+let total = fold even_squares from 0 with acc, n -> acc + n
 
 return "Even squares: " ++ join (map even_squares with show(it)) with ", " ++ "\\nSum: " ++ show(total)`,
   },
@@ -228,16 +228,14 @@ return "Original: " ++ join words with ", " ++
     name: "Sliding Window",
     category: "Pure: Collections",
     needsLLM: false,
-    code: `-- Sliding window for moving averages
-let temps = [72, 75, 71, 73, 78, 76, 74]
-let windows = window temps size 3
+    code: `-- Sliding window for text analysis
+let dna = "ATCGATCGAA"
+let codons = window dna size 3 stride 3
+let overlapping = window dna size 4 stride 2
 
-let averages = map windows with
-    let sum = fold it from 0 with acc + it
-    sum / length(it)
-
-return "Temperatures: " ++ join (map temps with show(it)) with ", " ++
-       "\\n3-day moving avg: " ++ join (map averages with show(it)) with ", "`,
+return "DNA sequence: " ++ dna ++
+       "\\nCodons (size 3, stride 3): " ++ join codons with " | " ++
+       "\\nOverlapping (size 4, stride 2): " ++ join overlapping with " | "`,
   },
 
   // ─── Pure: Advanced ─────────────────────────────────────────────────────
@@ -245,18 +243,21 @@ return "Temperatures: " ++ join (map temps with show(it)) with ", " ++
     name: "Optional Values",
     category: "Pure: Advanced",
     needsLLM: false,
-    code: `-- Safe handling of optional values
-let users = [
-    { name: "Alice", email: "alice@example.com" },
-    { name: "Bob" },
-    { name: "Charlie", email: "charlie@example.com" }
-]
+    code: `-- Safe handling of optional values with "or"
+let items = ["apple", "banana", "cherry"]
 
-let emails = map users with
-    let email = first(filter [it] where it.email?) or { email: "N/A" }
-    it.name ++ ": " ++ (email.email or "no email")
+let f = first(items) or "empty"
+let l = last(items) or "empty"
+let third = items[2] or "missing"
+let tenth = items[9] or "missing"
 
-return join emails with "\\n"`,
+let empty = first([]) or "nothing here"
+
+return "First: " ++ f ++
+       "\\nLast: " ++ l ++
+       "\\nThird: " ++ third ++
+       "\\n10th: " ++ tenth ++
+       "\\nFrom empty list: " ++ empty`,
   },
   nested: {
     name: "Nested Pipelines",
@@ -313,8 +314,10 @@ let reviews = [
 let sentiments = map reviews with
     ask "Rate the sentiment: positive, negative, or neutral. Reply with ONE word.\\n\\nReview: {it}"
 
-let results = map (zip(reviews, sentiments)) with
-    "[" ++ (last(it) or "?") ++ "] " ++ slice((first(it) or ""), 0, 40) ++ "..."
+let short = map reviews with slice it from 0 to 40
+
+let results = map (zip(short, sentiments)) with
+    "[" ++ (last(it) or "?") ++ "] " ++ (first(it) or "") ++ "..."
 
 return join results with "\\n"`,
   },
