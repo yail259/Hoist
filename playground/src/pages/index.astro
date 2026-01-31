@@ -13,7 +13,7 @@ import Base from "../layouts/Base.astro";
     </nav>
 
     <section class="hero">
-      <div class="badge">Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Reasoning Language Models</a> security research</div>
+      <div class="badge">Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Recursive Language Models</a> security research</div>
       <h1>Stop giving LLMs <span class="danger">unbounded execution</span></h1>
       <p class="subtitle">
         Hoist is a functional DSL for LLM orchestration that enforces resource limits,
@@ -203,6 +203,32 @@ return join summaries with "\\n"
       </div>
     </section>
 
+    <section class="install">
+      <h2>Get Started</h2>
+      <div class="install-grid">
+        <div class="install-option">
+          <h3>Python</h3>
+          <pre><code><span class="cmt"># Build from source (PyO3 bindings)</span>
+<span class="kw">cd</span> hoist-python
+maturin develop --release
+</code></pre>
+          <p>Requires Rust toolchain and <a href="https://www.maturin.rs/" target="_blank">maturin</a>.</p>
+        </div>
+        <div class="install-option">
+          <h3>CLI</h3>
+          <pre><code><span class="kw">cargo</span> install --path hoist-cli
+<span class="kw">hoist</span> program.hoist --context "your text"</code></pre>
+          <p>Requires Rust toolchain.</p>
+        </div>
+        <div class="install-option">
+          <h3>Browser</h3>
+          <pre><code><span class="cmt">-- No install needed</span>
+<span class="cmt">-- Runs via WebAssembly</span></code></pre>
+          <p><a href="/playground">Try the playground</a> — runs entirely in your browser.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="comparison">
       <h2>Compared to Alternatives</h2>
       <div class="table-wrapper">
@@ -269,7 +295,7 @@ return join summaries with "\\n"
     <footer>
       <p>
         Hoist is open source under the MIT license.
-        Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Reasoning Language Models</a>
+        Inspired by <a href="https://arxiv.org/html/2512.24601v1" target="_blank">Recursive Language Models</a>
         research on AI system safety.
       </p>
     </footer>
@@ -295,6 +321,9 @@ return join summaries with "\\n"
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .nav-links {
@@ -305,6 +334,9 @@ return join summaries with "\\n"
   .nav-links a {
     color: var(--text-muted);
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .nav-links a:hover {
@@ -331,6 +363,9 @@ return join summaries with "\\n"
 
   .badge a {
     color: var(--accent-light);
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .hero h1 {
@@ -662,6 +697,40 @@ return join summaries with "\\n"
     border-top: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 0.9rem;
+  }
+
+  /* Install */
+  .install-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .install-option {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .install-option h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .install-option pre {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .install-option p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
   }
 
   @media (max-width: 600px) {
